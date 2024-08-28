@@ -1,5 +1,7 @@
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WebAPI.Data;
 
 namespace WebAPI.Controller
 {
@@ -7,14 +9,17 @@ namespace WebAPI.Controller
     [Route("api/[controller]")]
     public class CityController : ControllerBase
     {
-        public CityController(){
-
+        private readonly DataContext dc;
+        public CityController(DataContext dataContext)
+        {
+            this.dc = dataContext;
         }
 
         [HttpGet]
-        public  IEnumerable<string> GetCity()
+        public async Task<IActionResult> GetCities()
         {
-            return new string[] { "mamata" };
+            var Cities = await dc.Cities.ToListAsync();
+            return Ok(Cities);
         }
         
     }
