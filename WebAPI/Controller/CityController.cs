@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAPI.Data;
+using WebAPI.Dtos;
 using WebAPI.Interfaces;
 using WebAPI.Models;
 
@@ -21,7 +22,15 @@ namespace WebAPI.Controller
         public async Task<IActionResult> GetCities()
         {
             var Cities = await uow.CityRepository.GetCitiesAsync();
-            return Ok(Cities);
+
+            var cityDto = from c in Cities
+                          select new CityDto()
+                          {
+                              Id = c.Id,
+                              Name = c.Name
+                          };
+
+            return Ok(cityDto);
         }
 
         // //Post api/city/add?cityName=Mumbai
@@ -37,8 +46,15 @@ namespace WebAPI.Controller
         // }
         
         [HttpPost("Post")]
-        public async Task<IActionResult> AddCity(City city)
+        public async Task<IActionResult> AddCity(CityDto cityDto)
         {
+            var city = new City()
+            {
+                Name = cityDto.Name,
+                LastUpdatedOn = DateTime.Now,
+                LastupdatedBy = 1
+            };
+
             uow.CityRepository.AddCity(city);
             await uow.SaveAsync();
 
