@@ -10,6 +10,7 @@ namespace WebAPI.Models
         public int Id { get; set; }
         public string Name { get; set; } = "";
 
+        public string Country { get; set; }=string.Empty;
         public DateTime LastUpdatedOn { get; set; }
         public int LastupdatedBy { get; set; }
     }

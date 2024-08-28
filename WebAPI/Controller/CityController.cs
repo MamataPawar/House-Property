@@ -1,3 +1,6 @@
+using AutoMapper;
+using Azure;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAPI.Data;
@@ -12,23 +15,25 @@ namespace WebAPI.Controller
     public class CityController : ControllerBase
     {
         private readonly IUnitOfWork uow;
+        private readonly IMapper mapper;
 
-        public CityController(IUnitOfWork uow)
+        public CityController(IUnitOfWork uow, IMapper mapper)
         {
             this.uow = uow;
+            this.mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetCities()
         {
             var Cities = await uow.CityRepository.GetCitiesAsync();
-
-            var cityDto = from c in Cities
-                          select new CityDto()
-                          {
-                              Id = c.Id,
-                              Name = c.Name
-                          };
+            var cityDto = mapper.Map<IEnumerable<CityDto>>(Cities);
+            // var cityDto = from c in Cities
+            //               select new CityDto()
+            //               {
+            //                   Id = c.Id,
+            //                   Name = c.Name
+            //               };
 
             return Ok(cityDto);
         }
@@ -48,12 +53,16 @@ namespace WebAPI.Controller
         [HttpPost("Post")]
         public async Task<IActionResult> AddCity(CityDto cityDto)
         {
-            var city = new City()
-            {
-                Name = cityDto.Name,
-                LastUpdatedOn = DateTime.Now,
-                LastupdatedBy = 1
-            };
+            var city = mapper.Map<City>(cityDto);
+            city.LastUpdatedOn = DateTime.Now;
+            city.LastupdatedBy = 1;
+
+            // var city = new City()
+            // {
+            //     Name = cityDto.Name,
+            //     LastUpdatedOn = DateTime.Now,
+            //     LastupdatedBy = 1
+            // };
 
             uow.CityRepository.AddCity(city);
             await uow.SaveAsync();
@@ -68,6 +77,34 @@ namespace WebAPI.Controller
             await uow.SaveAsync();
 
             return Ok(id);
+        }
+
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateCity(int id, CityDto cityDto)
+        {
+            var cityFromDB = uow.CityRepository.FindCity(id).Result;
+            cityFromDB.LastUpdatedOn = DateTime.Now;
+            cityFromDB.LastupdatedBy = 1;
+
+            mapper.Map(cityDto, cityFromDB);
+
+            await uow.SaveAsync();
+
+            return StatusCode(200);
+        }
+
+        [HttpPatch("patch/{id}")]
+        public async Task<IActionResult> UpdateCityPatch(int id, JsonPatchDocument<City> cityToPatch)
+        {
+            var cityFromDB = uow.CityRepository.FindCity(id).Result;
+            cityFromDB.LastUpdatedOn = DateTime.Now;
+            cityFromDB.LastupdatedBy = 1;
+
+            cityToPatch.ApplyTo(cityFromDB, ModelState);
+
+            await uow.SaveAsync();
+
+            return StatusCode(200);
         }
     }
 }
