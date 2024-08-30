@@ -82,12 +82,20 @@ namespace WebAPI.Controller
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateCity(int id, CityDto cityDto)
         {
+            if (id != cityDto.Id)
+                return BadRequest("Update not allowed");
+
             var cityFromDB = uow.CityRepository.FindCity(id).Result;
+
+            if (cityFromDB == null)
+                return BadRequest("Update not allowed");
+
             cityFromDB.LastUpdatedOn = DateTime.Now;
             cityFromDB.LastupdatedBy = 1;
 
             mapper.Map(cityDto, cityFromDB);
 
+            throw new Exception("Something happended");
             await uow.SaveAsync();
 
             return StatusCode(200);
